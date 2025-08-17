@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowdsurfing - Mauerpark</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+        }
+        
+        .screen.active {
+            display: flex;
+        }
+        
+        .screen-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .screen-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .screen-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 100px; /* Space for bottom nav */
+        }
+        
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 20px 100px 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+        
+        .location {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .card-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        
+        .prompt-card {
+            width: 100%;
+            max-width: 350px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: absolute;
+            cursor: grab;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .prompt-card:active {
+            cursor: grabbing;
+        }
+        
+        .prompt-card.swiping {
+            transition: none;
+        }
+        
+        .prompt-card.swipe-right {
+            transform: translateX(100%) rotate(15deg);
+            opacity: 0;
+        }
+        
+        .prompt-card.swipe-left {
+            transform: translateX(-100%) rotate(-15deg);
+            opacity: 0;
+        }
+        
+        .prompt-text {
+            font-size: 22px;
+            line-height: 1.4;
+            text-align: center;
+            margin-bottom: 20px;
+            margin-top: auto;
+            font-weight: 500;
+        }
+        
+        .swipe-icons {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: auto;
+        }
+        
+        .swipe-icon {
+            font-size: 40px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            transform: scale(0.8);
+        }
+        
+        .swipe-icon.left {
+            color: #ff6b6b;
+        }
+        
+        .swipe-icon.right {
+            color: #4CAF50;
+        }
+        
+        .swipe-icon.show {
+            opacity: 0.9;
+            transform: scale(1.1);
+        }
+        
+        .prompt-details {
+            margin-top: auto;
+        }
+        
+        .location-info {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        
+        .pool-status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .pool-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .decay-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .decay-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            transition: width 1s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            z-index: 10;
+            margin-bottom: 80px; /* Space for bottom nav */
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .control-btn.reject {
+            background: rgba(255, 107, 107, 0.3);
+        }
+        
+        .control-btn.accept {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        
+        .no-more-cards {
+            text-align: center;
+            opacity: 0.7;
+            margin-top: 50px;
+        }
+        
+        .refresh-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .trigger-message {
+            background: #4CAF50;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 0 max(12px, env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px;
+            border-radius: 12px;
+            min-width: 50px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+        
+        .nav-item:hover .nav-icon,
+        .nav-item.active .nav-icon {
+            opacity: 1;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            opacity: 0.6;
+            font-weight: 500;
+            transition: opacity 0.2s ease;
+        }
+        
+        .nav-item:hover .nav-label,
+        .nav-item.active .nav-label {
+            opacity: 0.9;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .overlay.show {
+            display: flex;
+        }
+        
+        .overlay-content {
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 350px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+        }
+        
+        .overlay-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .overlay-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .overlay-subtitle {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+        
+        .profile-info {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .profile-id {
+            opacity: 0.6;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .search-result {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .search-result:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .result-meta {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            opacity: 1;
+        }
+        
+        .telegram-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .telegram-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .telegram-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .telegram-item.active {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .telegram-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .telegram-meta {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .no-chats {
+            text-align: center;
+            opacity: 0.5;
+            padding: 40px 20px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .create-form {
+            max-width: 100%;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .number-input {
+            width: 100px;
+        }
+        
+        .create-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .create-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .location-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .location-name {
+            font-weight: 500;
+        }
+        
+        .location-count {
+            background: rgba(102, 126, 234, 0.3);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+        }
+        
+        .profile-info {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .profile-id {
+            opacity: 0.6;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .search-result {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .search-result:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .result-meta {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .telegram-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .telegram-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .telegram-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .telegram-item.active {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .telegram-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .telegram-meta {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Screen (Prompt Cards) -->
+    <div class="main-screen">
+        <div class="container">
+            <div class="header">
+                <div class="title">Crowdsurfing</div>
+                <div class="subtitle">Swipe right if interested ➡️</div>
+            </div>
+            
+            <div class="card-container" id="card-container">
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn reject" onclick="app.swipeLeft()">✗</button>
+                <button class="control-btn accept" onclick="app.swipeRight()">✓</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div class="screen" id="profile-screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showMainScreen()">←</button>
+            <div class="screen-title">Profile</div>
+        </div>
+        <div class="screen-content">
+            <div class="profile-info">
+                <div class="profile-avatar" id="profile-avatar-screen">?</div>
+                <div class="profile-id" id="profile-id-screen">Loading...</div>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="profile-swipes-screen">0</div>
+                    <div class="stat-label">Total Swipes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="profile-groups-screen">0</div>
+                    <div class="stat-label">Groups Joined</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="profile-created-screen">0</div>
+                    <div class="stat-label">Prompts Created</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="profile-success-screen">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-top: 20px;">
+                <h3 style="margin-bottom: 15px;">Recent Activity</h3>
+                <div id="recent-activity">
+                    <div style="opacity: 0.7; text-align: center; padding: 20px;">
+                        Start swiping to see your activity here!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Screen -->
+    <div class="screen" id="create-screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showMainScreen()">←</button>
+            <div class="screen-title">Create Prompt</div>
+        </div>
+        <div class="screen-content">
+            <div class="create-form">
+                <div class="form-group">
+                    <label class="form-label">What do you want to do together?</label>
+                    <textarea class="form-textarea" id="create-prompt-text" placeholder="e.g., Want to share travel stories over coffee? ☕"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Where should people meet?</label>
+                    <input type="text" class="form-input" id="create-prompt-location" placeholder="e.g., By the fountain">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">How many people?</label>
+                    <input type="number" class="form-input number-input" id="create-prompt-threshold" min="2" max="20" value="3" placeholder="3">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">How long will the activity last?</label>
+                    <select class="form-input" id="create-activity-duration">
+                        <option value="15 minutes">15 minutes</option>
+                        <option value="30 minutes">30 minutes</option>
+                        <option value="1 hour" selected>1 hour</option>
+                        <option value="1.5 hours">1.5 hours</option>
+                        <option value="2 hours">2 hours</option>
+                        <option value="3 hours">3 hours</option>
+                        <option value="Half day">Half day</option>
+                        <option value="Full day">Full day</option>
+                        <option value="Open-ended">Open-ended</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">How long before this prompt expires?</label>
+                    <select class="form-input" id="create-prompt-duration">
+                        <option value="1">1 hour</option>
+                        <option value="2" selected>2 hours (default)</option>
+                        <option value="4">4 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="12">12 hours</option>
+                        <option value="24">1 day</option>
+                        <option value="72">3 days</option>
+                        <option value="168">1 week</option>
+                        <option value="336">2 weeks</option>
+                        <option value="720">1 month</option>
+                    </select>
+                </div>
+                
+                <button class="create-btn" onclick="createPromptFromScreen()" style="width: 100%; margin-top: 20px;">
+                    Create Prompt ✨
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chats Screen -->
+    <div class="screen" id="chats-screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showMainScreen()">←</button>
+            <div class="screen-title">Your Chats</div>
+        </div>
+        <div class="screen-content">
+            <div class="telegram-list" id="telegram-list-screen">
+                <div class="no-chats">
+                    <div style="font-size: 40px; margin-bottom: 10px;">💬</div>
+                    <div>No active chats yet</div>
+                    <div style="font-size: 12px; margin-top: 5px;">Join a group by swiping right on prompts!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Screen -->
+    <div class="screen" id="map-screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showMainScreen()">←</button>
+            <div class="screen-title">Map View</div>
+        </div>
+        <div class="screen-content">
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 40px; text-align: center; height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <div style="font-size: 48px; margin-bottom: 20px;">🗺️</div>
+                <h3>Geographic View</h3>
+                <p style="opacity: 0.7; margin: 15px 0;">See all prompts distributed across locations</p>
+                <div id="map-stats" style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+                    Loading map data...
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="margin-bottom: 15px;">Active Locations</h3>
+                <div id="location-list">
+                    <!-- Will be populated with location data -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Screen -->
+    <div class="screen" id="search-screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showMainScreen()">←</button>
+            <div class="screen-title">Search</div>
+        </div>
+        <div class="screen-content">
+            <div class="search-container">
+                <input type="text" class="search-input" id="search-input-screen" placeholder="Search for activities, locations, or keywords..." oninput="performSearchScreen()">
+                
+                <div style="margin: 20px 0;">
+                    <h3 style="margin-bottom: 15px;">Quick Filters</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button class="filter-btn" onclick="filterByCategory('music')">🎵 Music</button>
+                        <button class="filter-btn" onclick="filterByCategory('food')">🍕 Food</button>
+                        <button class="filter-btn" onclick="filterByCategory('discussion')">💬 Discussion</button>
+                        <button class="filter-btn" onclick="filterByCategory('learning')">📚 Learning</button>
+                        <button class="filter-btn" onclick="filterByCategory('active')">⚡ Active</button>
+                        <button class="filter-btn" onclick="filterByCategory('all')">🌊 All</button>
+                    </div>
+                </div>
+                
+                <div class="search-results" id="search-results-screen">
+                    <div class="no-chats">Start typing or use filters to find prompts...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-container">
+            <div class="nav-item" onclick="showProfile()">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Profile</div>
+            </div>
+            <div class="nav-item" onclick="showCreatePrompt()">
+                <div class="nav-icon">💡</div>
+                <div class="nav-label">Create</div>
+            </div>
+            <div class="nav-item" onclick="showTelegramChats()">
+                <div class="nav-icon">💬</div>
+                <div class="nav-label">Chats</div>
+            </div>
+            <div class="nav-item" onclick="toggleMapView()" id="map-nav">
+                <div class="nav-icon">🗺️</div>
+                <div class="nav-label">Map</div>
+            </div>
+            <div class="nav-item" onclick="showSearch()">
+                <div class="nav-icon">🔍</div>
+                <div class="nav-label">Search</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Starting Crowdsurfing App...');
+
+        // Sample prompts with different thresholds for testing
+        const INITIAL_PROMPTS = [
+            {
+                id: 1,
+                text: "Want to jam with random instruments? 🎵",
+                threshold: 2,
+                location: "Near the musicians area",
+                duration: 2
+            },
+            {
+                id: 2,
+                text: "Impromptu philosophy discussion about technology and human connection 🤔",
+                threshold: 4,
+                location: "Find a quiet spot",
+                duration: 2
+            },
+            {
+                id: 3,
+                text: "Want to create a prompt? 💡",
+                threshold: 2,
+                location: "Right here",
+                duration: 2
+            },
+            {
+                id: 4,
+                text: "Share a skill you've learned this year 📚",
+                threshold: 3,
+                location: "By the fountain",
+                duration: 2
+            },
+            {
+                id: 5,
+                text: "Collaborative people-watching commentary 👥",
+                threshold: 2,
+                location: "Main path benches",
+                duration: 2
+            },
+            {
+                id: 6,
+                text: "Spontaneous potluck food sharing 🥗",
+                threshold: 4,
+                location: "Picnic area",
+                duration: 2
+            }
+        ];
+
+        class CrowdsurfingApp {
+            constructor() {
+                console.log('🎯 Initializing CrowdsurfingApp...');
+                this.prompts = [];
+                this.userSwipes = new Set();
+                this.currentIndex = 0;
+                this.currentCard = null;
+                this.isAnimating = false;
+                this.viewMode = 'card'; // 'card' or 'map'
+                this.userProfile = this.loadUserProfile();
+                this.telegramChats = this.loadTelegramChats();
+                this.init();
+            }
+
+            init() {
+                console.log('🔧 Starting initialization...');
+                this.loadData();
+                this.setupSwipeGestures();
+                this.renderCurrentCard();
+                this.startDecayTimer();
+                console.log('✅ App initialized successfully!');
+            }
+
+            loadData() {
+                console.log('📥 Loading data...');
+                const saved = localStorage.getItem('crowdsurfing-prompts');
+                if (saved) {
+                    console.log('📄 Loading saved prompts from localStorage');
+                    this.prompts = JSON.parse(saved);
+                } else {
+                    console.log('🆕 Creating new prompts from INITIAL_PROMPTS');
+                    this.prompts = INITIAL_PROMPTS.map(p => ({
+                        ...p,
+                        createdAt: Date.now(),
+                        swipes: [],
+                        triggered: false,
+                        expired: false
+                    }));
+                    this.saveData();
+                }
+
+                const savedSwipes = localStorage.getItem('crowdsurfing-swipes');
+                if (savedSwipes) {
+                    this.userSwipes = new Set(JSON.parse(savedSwipes));
+                }
+
+                const savedIndex = localStorage.getItem('crowdsurfing-index');
+                if (savedIndex) {
+                    this.currentIndex = parseInt(savedIndex);
+                }
+
+                console.log('✅ Data loaded. Prompts count:', this.prompts.length, 'Current index:', this.currentIndex);
+            }
+
+            saveData() {
+                localStorage.setItem('crowdsurfing-prompts', JSON.stringify(this.prompts));
+                localStorage.setItem('crowdsurfing-swipes', JSON.stringify([...this.userSwipes]));
+                localStorage.setItem('crowdsurfing-index', this.currentIndex.toString());
+            }
+
+            generateUserId() {
+                let userId = localStorage.getItem('crowdsurfing-userId');
+                if (!userId) {
+                    userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('crowdsurfing-userId', userId);
+                }
+                return userId;
+            }
+
+            getCurrentPrompt() {
+                const prompt = this.prompts[this.currentIndex];
+                console.log('📄 Getting current prompt:', prompt);
+                return prompt;
+            }
+
+            getDecayProgress(prompt) {
+                const now = Date.now();
+                const age = now - prompt.createdAt;
+                const duration = (prompt.duration || 2) * 60 * 60 * 1000;
+                return Math.min(age / duration, 1);
+            }
+
+            updateDecay() {
+                let changed = false;
+                this.prompts.forEach(prompt => {
+                    const progress = this.getDecayProgress(prompt);
+                    if (progress >= 1 && !prompt.expired) {
+                        prompt.expired = true;
+                        changed = true;
+                    }
+                });
+                
+                if (changed) {
+                    this.saveData();
+                    if (this.currentCard) {
+                        this.updateCardAppearance();
+                    }
+                }
+            }
+
+            startDecayTimer() {
+                setInterval(() => {
+                    this.updateDecay();
+                    this.updateDecayBar();
+                }, 1000);
+            }
+
+            updateDecayBar() {
+                const prompt = this.getCurrentPrompt();
+                if (prompt && this.currentCard) {
+                    const decayProgress = this.getDecayProgress(prompt);
+                    const remainingPercent = (1 - decayProgress) * 100;
+                    const progressBar = this.currentCard.querySelector('.decay-progress');
+                    if (progressBar) {
+                        progressBar.style.width = remainingPercent + '%';
+                    }
+                }
+            }
+
+            renderCurrentCard() {
+                console.log('🎨 Rendering current card...');
+                const container = document.getElementById('card-container');
+                
+                // Clear existing card
+                const existingCard = container.querySelector('.prompt-card');
+                if (existingCard) {
+                    existingCard.remove();
+                }
+
+                const prompt = this.getCurrentPrompt();
+                if (!prompt) {
+                    console.log('❌ No prompt found, showing no more cards');
+                    this.showNoMoreCards();
+                    return;
+                }
+
+                console.log('📋 Creating card for prompt:', prompt.text);
+                const card = document.createElement('div');
+                card.className = 'prompt-card';
+                this.currentCard = card;
+
+                const decayProgress = this.getDecayProgress(prompt);
+                const remainingPercent = (1 - decayProgress) * 100;
+
+                card.innerHTML = `
+                    <div class="prompt-text">${prompt.text}</div>
+                    <div class="swipe-icons">
+                        <div class="swipe-icon left">✗</div>
+                        <div class="swipe-icon right">✓</div>
+                    </div>
+                    <div class="prompt-details">
+                        <div class="location-info">📍 ${prompt.location}</div>
+                        ${prompt.activityDuration ? `<div style="text-align: center; font-size: 14px; margin-bottom: 15px; opacity: 0.8; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 12px;">⏱️ ${prompt.activityDuration}</div>` : ''}
+                        <div class="pool-status">
+                            <div class="pool-count">${prompt.swipes.length}/${prompt.threshold} interested</div>
+                        </div>
+                        <div class="decay-bar">
+                            <div class="decay-progress" style="width: ${remainingPercent}%"></div>
+                        </div>
+                        ${prompt.triggered ? '<div class="trigger-message">Pool formed! Go now! 🚀</div>' : ''}
+                    </div>
+                `;
+
+                this.updateCardAppearance();
+                container.appendChild(card);
+                console.log('✅ Card rendered successfully!');
+            }
+
+            updateCardAppearance() {
+                if (!this.currentCard) return;
+                
+                const prompt = this.getCurrentPrompt();
+                if (!prompt) return;
+
+                if (prompt.triggered) {
+                    this.currentCard.classList.add('triggered');
+                }
+                
+                if (prompt.expired) {
+                    this.currentCard.classList.add('expired');
+                }
+            }
+
+            setupSwipeGestures() {
+                console.log('👆 Setting up swipe gestures...');
+                const container = document.getElementById('card-container');
+                let startX = 0;
+                let currentX = 0;
+                let isDragging = false;
+
+                const handleStart = (clientX) => {
+                    if (this.isAnimating) return;
+                    startX = clientX;
+                    currentX = clientX;
+                    isDragging = true;
+                    if (this.currentCard) {
+                        this.currentCard.classList.add('swiping');
+                    }
+                };
+
+                const handleMove = (clientX) => {
+                    if (!isDragging || this.isAnimating) return;
+                    currentX = clientX;
+                    const diffX = currentX - startX;
+                    const rotation = diffX * 0.1;
+                    
+                    if (this.currentCard) {
+                        this.currentCard.style.transform = `translateX(${diffX}px) rotate(${rotation}deg)`;
+                    }
+
+                    // Show swipe indicators
+                    if (this.currentCard) {
+                        const leftIcon = this.currentCard.querySelector('.swipe-icon.left');
+                        const rightIcon = this.currentCard.querySelector('.swipe-icon.right');
+                        
+                        if (diffX < -50) {
+                            leftIcon.classList.add('show');
+                            rightIcon.classList.remove('show');
+                        } else if (diffX > 50) {
+                            rightIcon.classList.add('show');
+                            leftIcon.classList.remove('show');
+                        } else {
+                            leftIcon.classList.remove('show');
+                            rightIcon.classList.remove('show');
+                        }
+                    }
+                };
+
+                const handleEnd = () => {
+                    if (!isDragging || this.isAnimating) return;
+                    isDragging = false;
+                    
+                    const diffX = currentX - startX;
+                    
+                    // Hide indicators
+                    if (this.currentCard) {
+                        const leftIcon = this.currentCard.querySelector('.swipe-icon.left');
+                        const rightIcon = this.currentCard.querySelector('.swipe-icon.right');
+                        leftIcon.classList.remove('show');
+                        rightIcon.classList.remove('show');
+                    }
+
+                    if (Math.abs(diffX) > 100) {
+                        // Swipe detected
+                        if (diffX > 0) {
+                            this.swipeRight();
+                        } else {
+                            this.swipeLeft();
+                        }
+                    } else {
+                        // Snap back
+                        if (this.currentCard) {
+                            this.currentCard.classList.remove('swiping');
+                            this.currentCard.style.transform = '';
+                        }
+                    }
+                };
+
+                // Touch events
+                container.addEventListener('touchstart', (e) => {
+                    handleStart(e.touches[0].clientX);
+                }, { passive: true });
+
+                container.addEventListener('touchmove', (e) => {
+                    handleMove(e.touches[0].clientX);
+                }, { passive: true });
+
+                container.addEventListener('touchend', handleEnd, { passive: true });
+
+                // Mouse events
+                container.addEventListener('mousedown', (e) => {
+                    handleStart(e.clientX);
+                });
+
+                container.addEventListener('mousemove', (e) => {
+                    handleMove(e.clientX);
+                });
+
+                container.addEventListener('mouseup', handleEnd);
+                container.addEventListener('mouseleave', handleEnd);
+            }
+
+            swipeLeft() {
+                if (this.isAnimating) return;
+                console.log('👈 Swiping left');
+                this.animateSwipe('left', false);
+            }
+
+            swipeRight() {
+                if (this.isAnimating) return;
+                console.log('👉 Swiping right');
+                const prompt = this.getCurrentPrompt();
+                if (prompt && !prompt.expired) {
+                    this.handleSwipe(prompt.id, true);
+                }
+                this.animateSwipe('right', true);
+            }
+
+            animateSwipe(direction, liked) {
+                if (!this.currentCard) return;
+                
+                this.isAnimating = true;
+                this.currentCard.classList.remove('swiping');
+                this.currentCard.classList.add(`swipe-${direction}`);
+
+                setTimeout(() => {
+                    this.nextCard();
+                    this.isAnimating = false;
+                }, 300);
+            }
+
+            handleSwipe(promptId, liked) {
+                const userId = this.generateUserId();
+                const prompt = this.prompts.find(p => p.id === promptId);
+                
+                if (!prompt || prompt.expired) return;
+
+                // Update profile stats
+                this.updateProfile({ 
+                    totalSwipes: this.userProfile.totalSwipes + 1,
+                    rightSwipes: liked ? this.userProfile.rightSwipes + 1 : this.userProfile.rightSwipes
+                });
+
+                if (liked) {
+                    this.userSwipes.add(promptId);
+                    if (!prompt.swipes.includes(userId)) {
+                        prompt.swipes.push(userId);
+                    }
+
+                    // Check if threshold is reached
+                    if (prompt.swipes.length >= prompt.threshold && !prompt.triggered) {
+                        prompt.triggered = true;
+                        this.showTriggerNotification(prompt);
+                        
+                        // Update profile for joining group
+                        this.updateProfile({ 
+                            groupsJoined: this.userProfile.groupsJoined + 1
+                        });
+                    }
+                }
+
+                this.saveData();
+            }
+
+            showTriggerNotification(prompt) {
+                console.log('🎉 Pool triggered!', prompt.text);
+                
+                // Simulate creating telegram chat and add to user's chat list
+                const mockChatData = {
+                    result: {
+                        chat_id: `-100${Math.floor(Math.random() * 1000000000)}`,
+                        invite_link: `https://t.me/joinchat/${Math.random().toString(36).substring(2, 10)}`
+                    }
+                };
+                
+                this.addTelegramChat(prompt, mockChatData);
+                
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(`Pool formed! ${prompt.text}`, {
+                        body: `Go to: ${prompt.location} | ${prompt.swipes.length} people ready!`,
+                        icon: '/favicon.ico'
+                    });
+                }
+            }
+
+            nextCard() {
+                this.currentIndex++;
+                this.saveData();
+                this.renderCurrentCard();
+            }
+
+            showNoMoreCards() {
+                const container = document.getElementById('card-container');
+                container.innerHTML = `
+                    <div class="no-more-cards">
+                        <h3>All caught up! 🎉</h3>
+                        <p>Check back later for new prompts</p>
+                        <button class="refresh-btn" onclick="app.restart()">Start over</button>
+                    </div>
+                `;
+            }
+
+            restart() {
+                this.currentIndex = 0;
+                this.saveData();
+                this.renderCurrentCard();
+            }
+
+            // User Profile Management
+            loadUserProfile() {
+                const profile = localStorage.getItem('crowdsurfing-profile');
+                if (profile) {
+                    return JSON.parse(profile);
+                }
+                
+                // Create new profile
+                const newProfile = {
+                    userId: this.generateUserId(),
+                    createdAt: Date.now(),
+                    totalSwipes: 0,
+                    rightSwipes: 0,
+                    groupsJoined: 0,
+                    promptsCreated: 0,
+                    lastActive: Date.now()
+                };
+                
+                this.saveUserProfile(newProfile);
+                return newProfile;
+            }
+
+            saveUserProfile(profile = this.userProfile) {
+                localStorage.setItem('crowdsurfing-profile', JSON.stringify(profile));
+            }
+
+            updateProfile(updates) {
+                this.userProfile = { ...this.userProfile, ...updates, lastActive: Date.now() };
+                this.saveUserProfile();
+            }
+
+            // Telegram Chats Management
+            loadTelegramChats() {
+                const chats = localStorage.getItem('crowdsurfing-chats');
+                return chats ? JSON.parse(chats) : [];
+            }
+
+            saveTelegramChats() {
+                localStorage.setItem('crowdsurfing-chats', JSON.stringify(this.telegramChats));
+            }
+
+            addTelegramChat(prompt, chatData) {
+                const chat = {
+                    id: chatData.result.chat_id,
+                    title: `${prompt.text.substring(0, 30)}...`,
+                    prompt: prompt.text,
+                    location: prompt.location,
+                    participants: prompt.swipes.length,
+                    inviteLink: chatData.result.invite_link,
+                    createdAt: Date.now(),
+                    active: true
+                };
+                
+                this.telegramChats.unshift(chat);
+                this.saveTelegramChats();
+            }
+
+            // Map View Toggle
+            toggleMapView() {
+                const navItem = document.getElementById('map-nav');
+                
+                if (this.viewMode === 'card') {
+                    this.viewMode = 'map';
+                    this.showMapView();
+                    navItem.classList.add('active');
+                } else {
+                    this.viewMode = 'card';
+                    this.showCardView();
+                    navItem.classList.remove('active');
+                }
+            }
+
+            showMapView() {
+                // Hide card interface and show map
+                document.querySelector('.card-container').style.display = 'none';
+                document.querySelector('.controls').style.display = 'none';
+                
+                // Create map container if it doesn't exist
+                let mapContainer = document.getElementById('map-container');
+                if (!mapContainer) {
+                    mapContainer = document.createElement('div');
+                    mapContainer.id = 'map-container';
+                    mapContainer.style.cssText = `
+                        flex: 1;
+                        background: rgba(255, 255, 255, 0.1);
+                        backdrop-filter: blur(15px);
+                        border-radius: 20px;
+                        margin-bottom: 20px;
+                        position: relative;
+                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        padding: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        text-align: center;
+                    `;
+                    mapContainer.innerHTML = `
+                        <div>
+                            <div style="font-size: 48px; margin-bottom: 20px;">🗺️</div>
+                            <h3>Map View</h3>
+                            <p style="opacity: 0.7; margin-top: 10px;">See prompts distributed geographically</p>
+                            <div style="margin-top: 20px; font-size: 14px; opacity: 0.6;">
+                                Map integration coming soon!<br>
+                                Currently showing ${this.prompts.filter(p => !p.expired).length} active prompts
+                            </div>
+                        </div>
+                    `;
+                    document.querySelector('.container').insertBefore(mapContainer, document.querySelector('.controls'));
+                }
+                mapContainer.style.display = 'flex';
+            }
+
+            showCardView() {
+                // Show card interface and hide map
+                document.querySelector('.card-container').style.display = 'flex';
+                document.querySelector('.controls').style.display = 'flex';
+                
+                const mapContainer = document.getElementById('map-container');
+                if (mapContainer) {
+                    mapContainer.style.display = 'none';
+                }
+            }
+
+            // Search Functionality
+            searchPrompts(query) {
+                if (!query.trim()) return [];
+                
+                const searchTerm = query.toLowerCase();
+                return this.prompts.filter(prompt => {
+                    return prompt.text.toLowerCase().includes(searchTerm) ||
+                           prompt.location.toLowerCase().includes(searchTerm) ||
+                           this.getPromptCategory(prompt.text).includes(searchTerm);
+                });
+            }
+
+            getPromptCategory(text) {
+                const textLower = text.toLowerCase();
+                if (textLower.includes('music') || textLower.includes('jam')) return 'music';
+                if (textLower.includes('food') || textLower.includes('eat')) return 'food';
+                if (textLower.includes('discuss') || textLower.includes('talk')) return 'discussion';
+                if (textLower.includes('skill') || textLower.includes('learn')) return 'learning';
+                if (textLower.includes('create') || textLower.includes('prompt')) return 'creative';
+                return 'social';
+            }
+
+            jumpToPrompt(promptId) {
+                const index = this.prompts.findIndex(p => p.id === promptId);
+                if (index !== -1) {
+                    this.currentIndex = index;
+                    this.saveData();
+                    this.renderCurrentCard();
+                    this.showCardView();
+                    document.getElementById('map-nav').classList.remove('active');
+                    this.viewMode = 'card';
+                }
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Start the app
+        console.log('🎬 Creating app instance...');
+        const app = new CrowdsurfingApp();
+        console.log('🎊 App started!', app);
+
+        // Global functions for screen navigation
+        function showMainScreen() {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Update bottom nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        function showScreen(screenId) {
+            // Hide all screens first
+            showMainScreen();
+            
+            // Show the requested screen
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showProfile() {
+            const profile = app.userProfile;
+            
+            // Update profile display
+            const initials = profile.userId.substring(5, 7).toUpperCase();
+            document.getElementById('profile-avatar-screen').textContent = initials;
+            document.getElementById('profile-id-screen').textContent = profile.userId;
+            document.getElementById('profile-swipes-screen').textContent = profile.totalSwipes;
+            document.getElementById('profile-groups-screen').textContent = profile.groupsJoined;
+            document.getElementById('profile-created-screen').textContent = profile.promptsCreated;
+            
+            const successRate = profile.totalSwipes > 0 ? 
+                Math.round((profile.groupsJoined / profile.totalSwipes) * 100) : 0;
+            document.getElementById('profile-success-screen').textContent = successRate + '%';
+            
+            // Update recent activity
+            updateRecentActivity();
+            
+            showScreen('profile-screen');
+        }
+
+        function updateRecentActivity() {
+            const container = document.getElementById('recent-activity');
+            const recentSwipes = app.userSwipes ? Array.from(app.userSwipes).slice(-5) : [];
+            
+            if (recentSwipes.length === 0) {
+                container.innerHTML = '<div style="opacity: 0.7; text-align: center; padding: 20px;">Start swiping to see your activity here!</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            recentSwipes.reverse().forEach(promptId => {
+                const prompt = app.prompts.find(p => p.id === parseInt(promptId));
+                if (prompt) {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 14px;';
+                    item.innerHTML = `
+                        <div style="font-weight: 500;">${prompt.text.substring(0, 50)}...</div>
+                        <div style="opacity: 0.6; font-size: 12px; margin-top: 4px;">📍 ${prompt.location}</div>
+                    `;
+                    container.appendChild(item);
+                }
+            });
+        }
+
+        function showCreatePrompt() {
+            showScreen('create-screen');
+        }
+
+        function createPromptFromScreen() {
+            const text = document.getElementById('create-prompt-text').value.trim();
+            const location = document.getElementById('create-prompt-location').value.trim();
+            const threshold = parseInt(document.getElementById('create-prompt-threshold').value);
+            const duration = parseInt(document.getElementById('create-prompt-duration').value);
+            const activityDuration = document.getElementById('create-activity-duration').value;
+            
+            if (!text || !location) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Create new prompt
+            const newPrompt = {
+                id: Date.now(),
+                text: text,
+                threshold: threshold,
+                location: location,
+                duration: duration,
+                activityDuration: activityDuration,
+                createdAt: Date.now(),
+                swipes: [],
+                triggered: false,
+                expired: false,
+                creator: app.userProfile.userId
+            };
+            
+            // Add to prompts array
+            app.prompts.push(newPrompt);
+            app.updateProfile({ promptsCreated: app.userProfile.promptsCreated + 1 });
+            app.saveData();
+            
+            // Clear form
+            document.getElementById('create-prompt-text').value = '';
+            document.getElementById('create-prompt-location').value = '';
+            document.getElementById('create-prompt-threshold').value = '3';
+            document.getElementById('create-prompt-duration').value = '2';
+            document.getElementById('create-activity-duration').value = '1 hour';
+            
+            alert('Prompt created! 🎉\nIt\'s now available for others to discover.');
+            
+            // Go back to main screen
+            showMainScreen();
+        }
+
+        function showTelegramChats() {
+            const chatsList = document.getElementById('telegram-list-screen');
+            
+            if (app.telegramChats.length === 0) {
+                chatsList.innerHTML = `
+                    <div class="no-chats">
+                        <div style="font-size: 40px; margin-bottom: 10px;">💬</div>
+                        <div>No active chats yet</div>
+                        <div style="font-size: 12px; margin-top: 5px;">Join a group by swiping right on prompts!</div>
+                    </div>
+                `;
+            } else {
+                chatsList.innerHTML = '';
+                app.telegramChats.forEach(chat => {
+                    const chatItem = document.createElement('div');
+                    chatItem.className = 'telegram-item';
+                    if (chat.active) chatItem.classList.add('active');
+                    
+                    chatItem.innerHTML = `
+                        <div class="telegram-title">${chat.title}</div>
+                        <div class="telegram-meta">
+                            📍 ${chat.location} • ${chat.participants} people • ${formatTimeAgo(chat.createdAt)}
+                        </div>
+                    `;
+                    
+                    chatItem.addEventListener('click', () => {
+                        if (chat.inviteLink) {
+                            window.open(chat.inviteLink, '_blank');
+                        }
+                    });
+                    
+                    chatsList.appendChild(chatItem);
+                });
+            }
+            
+            showScreen('chats-screen');
+        }
+
+        function toggleMapView() {
+            // Update map stats
+            const activePrompts = app.prompts.filter(p => !p.expired);
+            document.getElementById('map-stats').textContent = 
+                `${activePrompts.length} active prompts across ${getUniqueLocations().length} locations`;
+            
+            // Update location list
+            updateLocationList();
+            
+            showScreen('map-screen');
+        }
+
+        function getUniqueLocations() {
+            const locations = {};
+            app.prompts.forEach(prompt => {
+                if (!prompt.expired) {
+                    locations[prompt.location] = (locations[prompt.location] || 0) + 1;
+                }
+            });
+            return Object.keys(locations).map(location => ({
+                name: location,
+                count: locations[location]
+            }));
+        }
+
+        function updateLocationList() {
+            const locations = getUniqueLocations();
+            const container = document.getElementById('location-list');
+            
+            if (locations.length === 0) {
+                container.innerHTML = '<div class="no-chats">No active locations</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            locations.forEach(location => {
+                const item = document.createElement('div');
+                item.className = 'location-item';
+                item.innerHTML = `
+                    <div class="location-name">📍 ${location.name}</div>
+                    <div class="location-count">${location.count} prompt${location.count !== 1 ? 's' : ''}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showSearch() {
+            showScreen('search-screen');
+            setTimeout(() => {
+                document.getElementById('search-input-screen').focus();
+            }, 100);
+        }
+
+        function performSearchScreen() {
+            const query = document.getElementById('search-input-screen').value;
+            displaySearchResults(query);
+        }
+
+        function filterByCategory(category) {
+            // Update filter button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (category === 'all') {
+                displaySearchResults('');
+                return;
+            }
+            
+            const results = app.prompts.filter(prompt => {
+                const promptCategory = app.getPromptCategory(prompt.text);
+                return promptCategory === category;
+            });
+            
+            displaySearchResults('', results);
+        }
+
+        function displaySearchResults(query, customResults = null) {
+            const results = customResults || app.searchPrompts(query);
+            const resultsContainer = document.getElementById('search-results-screen');
+            
+            if (!query.trim() && !customResults) {
+                resultsContainer.innerHTML = '<div class="no-chats">Start typing or use filters to find prompts...</div>';
+                return;
+            }
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-chats">No prompts found matching your criteria.</div>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = '';
+            results.forEach(prompt => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result';
+                
+                const status = prompt.expired ? 'Expired' : 
+                             prompt.triggered ? 'Active Group' : 
+                             'Available';
+                
+                resultItem.innerHTML = `
+                    <div class="result-text">${prompt.text}</div>
+                    <div class="result-meta">
+                        📍 ${prompt.location} • ${prompt.swipes.length}/${prompt.threshold} interested • ${status}${prompt.activityDuration ? ` • ⏱️ ${prompt.activityDuration}` : ''}
+                    </div>
+                `;
+                
+                resultItem.addEventListener('click', () => {
+                    app.jumpToPrompt(prompt.id);
+                    showMainScreen();
+                });
+                
+                resultsContainer.appendChild(resultItem);
+            });
+        }
+
+        function formatTimeAgo(timestamp) {
+            const diff = Date.now() - timestamp;
+            const minutes = Math.floor(diff / (60 * 1000));
+            const hours = Math.floor(diff / (60 * 60 * 1000));
+            const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+            
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
+        }
+    </script>
+</body>
+</html>
