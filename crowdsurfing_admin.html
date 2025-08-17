@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowdsurfing Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .admin-title {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #22c55e;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .admin-nav {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-tab.active:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .prompts-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .create-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .prompt-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .prompt-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .prompt-item.active {
+            border-left-color: #22c55e;
+        }
+        
+        .prompt-item.triggered {
+            border-left-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .prompt-item.expired {
+            border-left-color: #ef4444;
+            opacity: 0.6;
+        }
+        
+        .prompt-info {
+            flex: 1;
+        }
+        
+        .prompt-text {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .prompt-meta {
+            font-size: 12px;
+            opacity: 0.7;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .prompt-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chart-placeholder {
+            text-align: center;
+            opacity: 0.5;
+        }
+        
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .user-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .user-id {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        
+        .user-stats {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .insight-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .insight-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #3b82f6;
+        }
+        
+        .insight-text {
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div class="admin-title">Crowdsurfing Admin Dashboard</div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live Data</span>
+            </div>
+        </div>
+
+        <div class="admin-nav">
+            <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+            <button class="nav-tab" onclick="showTab('prompts')">Prompts</button>
+            <button class="nav-tab" onclick="showTab('users')">Users</button>
+            <button class="nav-tab" onclick="showTab('analytics')">Analytics</button>
+            <button class="nav-tab" onclick="showTab('insights')">Insights</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-users">0</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-change">+0 today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-prompts">0</div>
+                    <div class="stat-label">Active Prompts</div>
+                    <div class="stat-change">0 triggered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-swipes">0</div>
+                    <div class="stat-label">Total Swipes</div>
+                    <div class="stat-change">0 right swipes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-change">Prompts → Groups</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <h3>Activity Timeline</h3>
+                    <p>Real-time user activity and prompt interactions</p>
+                    <canvas id="activity-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompts Tab -->
+        <div id="prompts" class="tab-content">
+            <div class="prompts-section">
+                <div class="section-header">
+                    <div class="section-title">Manage Prompts</div>
+                    <button class="create-btn" onclick="showCreatePromptModal()">Create New Prompt</button>
+                </div>
+                <div class="prompt-list" id="prompt-list">
+                    <!-- Prompts will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="users" class="tab-content">
+            <div class="prompts-section">
+                <div class="section-header">
+                    <div class="section-title">User Activity</div>
+                </div>
+                <div class="users-grid" id="users-grid">
+                    <!-- Users will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-session">0m</div>
+                    <div class="stat-label">Avg Session</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="popular-location">-</div>
+                    <div class="stat-label">Popular Location</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="peak-time">-</div>
+                    <div class="stat-label">Peak Activity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="return-rate">0%</div>
+                    <div class="stat-label">Return Rate</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <h3>Swipe Patterns</h3>
+                    <p>Left vs Right swipe ratios by prompt type</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <h3>Location Popularity</h3>
+                    <p>Most popular meetup locations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Tab -->
+        <div id="insights" class="tab-content">
+            <div id="insights-container">
+                <!-- Insights will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Prompt Modal -->
+    <div class="modal" id="create-prompt-modal">
+        <div class="modal-content">
+            <div class="modal-header">Create New Prompt</div>
+            <form id="create-prompt-form">
+                <div class="form-group">
+                    <label class="form-label">Prompt Text</label>
+                    <textarea class="form-textarea" id="new-prompt-text" placeholder="Want to discuss the future of social coordination? 🤔" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="new-prompt-location" placeholder="By the fountain" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Threshold (people needed)</label>
+                    <input type="number" class="form-input" id="new-prompt-threshold" min="2" max="20" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration</label>
+                    <select class="form-select" id="new-prompt-duration">
+                        <option value="1">1 hour</option>
+                        <option value="2" selected>2 hours</option>
+                        <option value="4">4 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="12">12 hours</option>
+                        <option value="24">1 day</option>
+                    </select>
+                </div>
+            </form>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="hideCreatePromptModal()">Cancel</button>
+                <button class="btn btn-submit" onclick="createPrompt()">Create Prompt</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CrowdsurfingAdmin {
+            constructor() {
+                this.data = {
+                    prompts: [],
+                    users: {},
+                    analytics: {},
+                    sessions: []
+                };
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.updateOverview();
+                this.updatePromptsList();
+                this.updateUsersList();
+                this.updateAnalytics();
+                this.generateInsights();
+                
+                // Refresh data every 10 seconds
+                setInterval(() => {
+                    this.loadData();
+                    this.updateOverview();
+                    this.updatePromptsList();
+                    this.updateUsersList();
+                    this.updateAnalytics();
+                    this.generateInsights();
+                }, 10000);
+            }
+
+            loadData() {
+                // Load data from localStorage (in real app, this would be API calls)
+                const prompts = localStorage.getItem('crowdsurfing-prompts');
+                if (prompts) {
+                    this.data.prompts = JSON.parse(prompts);
+                }
+
+                // Simulate user data
+                this.data.users = this.generateUserData();
+                this.data.analytics = this.calculateAnalytics();
+            }
+
+            generateUserData() {
+                const userCount = Math.floor(Math.random() * 50) + 10;
+                const users = {};
+                
+                for (let i = 0; i < userCount; i++) {
+                    const userId = `user_${Math.random().toString(36).substr(2, 9)}`;
+                    users[userId] = {
+                        id: userId,
+                        firstSeen: Date.now() - Math.random() * 24 * 60 * 60 * 1000,
+                        lastActive: Date.now() - Math.random() * 60 * 60 * 1000,
+                        totalSwipes: Math.floor(Math.random() * 20),
+                        rightSwipes: Math.floor(Math.random() * 10),
+                        promptsCreated: Math.floor(Math.random() * 3),
+                        groupsJoined: Math.floor(Math.random() * 5)
+                    };
+                }
+                
+                return users;
+            }
+
+            calculateAnalytics() {
+                const users = Object.values(this.data.users);
+                const prompts = this.data.prompts;
+                
+                return {
+                    totalUsers: users.length,
+                    activeUsers: users.filter(u => Date.now() - u.lastActive < 60 * 60 * 1000).length,
+                    totalSwipes: users.reduce((sum, u) => sum + u.totalSwipes, 0),
+                    rightSwipes: users.reduce((sum, u) => sum + u.rightSwipes, 0),
+                    triggeredPrompts: prompts.filter(p => p.triggered).length,
+                    expiredPrompts: prompts.filter(p => p.expired).length,
+                    averageSession: Math.floor(Math.random() * 15) + 5,
+                    popularLocation: this.getMostPopularLocation(),
+                    peakTime: this.getPeakTime(),
+                    returnRate: Math.floor(Math.random() * 40) + 30
+                };
+            }
+
+            getMostPopularLocation() {
+                const locations = {};
+                this.data.prompts.forEach(prompt => {
+                    locations[prompt.location] = (locations[prompt.location] || 0) + prompt.swipes.length;
+                });
+                
+                return Object.keys(locations).reduce((a, b) => 
+                    locations[a] > locations[b] ? a : b, 'None'
+                );
+            }
+
+            getPeakTime() {
+                const hours = ['9AM', '12PM', '3PM', '6PM', '9PM'];
+                return hours[Math.floor(Math.random() * hours.length)];
+            }
+
+            updateOverview() {
+                const analytics = this.data.analytics;
+                
+                document.getElementById('total-users').textContent = analytics.totalUsers;
+                document.getElementById('active-prompts').textContent = this.data.prompts.filter(p => !p.expired).length;
+                document.getElementById('total-swipes').textContent = analytics.totalSwipes;
+                
+                const successRate = this.data.prompts.length > 0 ? 
+                    Math.round((analytics.triggeredPrompts / this.data.prompts.length) * 100) : 0;
+                document.getElementById('success-rate').textContent = successRate + '%';
+            }
+
+            updatePromptsList() {
+                const container = document.getElementById('prompt-list');
+                container.innerHTML = '';
+
+                this.data.prompts.forEach(prompt => {
+                    const item = document.createElement('div');
+                    item.className = 'prompt-item';
+                    
+                    if (prompt.triggered) item.classList.add('triggered');
+                    else if (prompt.expired) item.classList.add('expired');
+                    else item.classList.add('active');
+
+                    const decayProgress = this.getDecayProgress(prompt);
+                    const timeRemaining = this.getTimeRemaining(prompt);
+                    
+                    item.innerHTML = `
+                        <div class="prompt-info">
+                            <div class="prompt-text">${prompt.text}</div>
+                            <div class="prompt-meta">
+                                <span>📍 ${prompt.location}</span>
+                                <span>👥 ${prompt.swipes.length}/${prompt.threshold}</span>
+                                <span>⏰ ${timeRemaining}</span>
+                                <span>🆔 ${prompt.id}</span>
+                            </div>
+                        </div>
+                        <div class="prompt-stats">
+                            <div class="stat-pill">${prompt.swipes.length} swipes</div>
+                            <div class="stat-pill">${prompt.triggered ? 'TRIGGERED' : prompt.expired ? 'EXPIRED' : 'ACTIVE'}</div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            }
+
+            updateUsersList() {
+                const container = document.getElementById('users-grid');
+                container.innerHTML = '';
+
+                Object.values(this.data.users).slice(0, 20).forEach(user => {
+                    const card = document.createElement('div');
+                    card.className = 'user-card';
+                    
+                    const initials = user.id.substring(5, 7).toUpperCase();
+                    const lastActive = this.formatLastActive(user.lastActive);
+                    
+                    card.innerHTML = `
+                        <div class="user-avatar">${initials}</div>
+                        <div class="user-id">${user.id}</div>
+                        <div class="user-stats">
+                            ${user.totalSwipes} swipes • ${user.groupsJoined} groups<br>
+                            Last active: ${lastActive}
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                });
+            }
+
+            updateAnalytics() {
+                const analytics = this.data.analytics;
+                
+                document.getElementById('avg-session').textContent = analytics.averageSession + 'm';
+                document.getElementById('popular-location').textContent = analytics.popularLocation;
+                document.getElementById('peak-time').textContent = analytics.peakTime;
+                document.getElementById('return-rate').textContent = analytics.returnRate + '%';
+            }
+
+            generateInsights() {
+                const container = document.getElementById('insights-container');
+                container.innerHTML = '';
+
+                const insights = this.calculateInsights();
+                
+                insights.forEach(insight => {
+                    const card = document.createElement('div');
+                    card.className = 'insight-card';
+                    card.innerHTML = `
+                        <div class="insight-title">${insight.title}</div>
+                        <div class="insight-text">${insight.text}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            calculateInsights() {
+                const analytics = this.data.analytics;
+                const prompts = this.data.prompts;
+                const insights = [];
+
+                // Prompt success analysis
+                if (analytics.triggeredPrompts > 0) {
+                    const successRate = (analytics.triggeredPrompts / prompts.length) * 100;
+                    insights.push({
+                        title: `${successRate.toFixed(1)}% Prompt Success Rate`,
+                        text: `${analytics.triggeredPrompts} out of ${prompts.length} prompts successfully formed groups. This suggests the threshold levels are appropriate and people are genuinely interested in coordinating.`
+                    });
+                }
+
+                // User engagement analysis
+                if (analytics.rightSwipes > 0) {
+                    const engagementRate = (analytics.rightSwipes / analytics.totalSwipes) * 100;
+                    insights.push({
+                        title: `${engagementRate.toFixed(1)}% Positive Engagement`,
+                        text: `Users are swiping right on ${engagementRate.toFixed(1)}% of prompts they see. ${engagementRate > 30 ? 'This is quite high and suggests strong interest in the activities offered.' : 'This suggests users are being selective about which activities they join.'}`
+                    });
+                }
+
+                // Location insights
+                if (analytics.popularLocation !== 'None') {
+                    insights.push({
+                        title: `${analytics.popularLocation} is the Most Popular Location`,
+                        text: `This location is attracting the most interest. Consider creating more prompts for this area or understanding what makes it appealing to users.`
+                    });
+                }
+
+                // Time-based insights
+                insights.push({
+                    title: `Peak Activity at ${analytics.peakTime}`,
+                    text: `Most user activity happens around ${analytics.peakTime}. Consider timing new prompt releases or special events around this time for maximum engagement.`
+                });
+
+                // Return user analysis
+                insights.push({
+                    title: `${analytics.returnRate}% Return Rate`,
+                    text: `${analytics.returnRate}% of users return to use the app multiple times. ${analytics.returnRate > 40 ? 'This indicates strong product-market fit and user satisfaction.' : 'There may be opportunities to improve retention through better onboarding or more engaging prompts.'}`
+                });
+
+                return insights;
+            }
+
+            getDecayProgress(prompt) {
+                const now = Date.now();
+                const age = now - prompt.createdAt;
+                const duration = (prompt.duration || 2) * 60 * 60 * 1000;
+                return Math.min(age / duration, 1);
+            }
+
+            getTimeRemaining(prompt) {
+                const now = Date.now();
+                const endTime = prompt.createdAt + (prompt.duration * 60 * 60 * 1000);
+                const remaining = endTime - now;
+                
+                if (remaining <= 0) return 'Expired';
+                
+                const hours = Math.floor(remaining / (60 * 60 * 1000));
+                const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m left`;
+                } else {
+                    return `${minutes}m left`;
+                }
+            }
+
+            formatLastActive(timestamp) {
+                const diff = Date.now() - timestamp;
+                const minutes = Math.floor(diff / (60 * 1000));
+                const hours = Math.floor(diff / (60 * 60 * 1000));
+                
+                if (minutes < 60) return `${minutes}m ago`;
+                if (hours < 24) return `${hours}h ago`;
+                return `${Math.floor(hours / 24)}d ago`;
+            }
+        }
+
+        // Global functions for UI interactions
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showCreatePromptModal() {
+            document.getElementById('create-prompt-modal').classList.add('show');
+        }
+
+        function hideCreatePromptModal() {
+            document.getElementById('create-prompt-modal').classList.remove('show');
+            document.getElementById('create-prompt-form').reset();
+        }
+
+        function createPrompt() {
+            const text = document.getElementById('new-prompt-text').value;
+            const location = document.getElementById('new-prompt-location').value;
+            const threshold = parseInt(document.getElementById('new-prompt-threshold').value);
+            const duration = parseInt(document.getElementById('new-prompt-duration').value);
+            
+            if (!text || !location) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Get existing prompts
+            const existing = JSON.parse(localStorage.getItem('crowdsurfing-prompts') || '[]');
+            
+            // Create new prompt
+            const newPrompt = {
+                id: Date.now(),
+                text: text,
+                threshold: threshold,
+                location: location,
+                duration: duration,
+                createdAt: Date.now(),
+                swipes: [],
+                triggered: false,
+                expired: false,
+                creator: 'admin'
+            };
+            
+            // Add to prompts
+            existing.push(newPrompt);
+            localStorage.setItem('crowdsurfing-prompts', JSON.stringify(existing));
+            
+            // Close modal and refresh
+            hideCreatePromptModal();
+            admin.loadData();
+            admin.updatePromptsList();
+            admin.updateOverview();
+            
+            alert('Prompt created successfully!');
+        }
+
+        // Initialize admin dashboard
+        const admin = new CrowdsurfingAdmin();
+        
+        // Close modal when clicking outside
+        document.getElementById('create-prompt-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hideCreatePromptModal();
+            }
+        });
+    </script>
+</body>
+</html>
